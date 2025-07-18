@@ -1,0 +1,60 @@
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ideas | Suitmedia</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="container nav-container">
+      <div class="logo">
+        <img src="https://raw.githubusercontent.com/Dicky-Sihite/asset/refs/heads/main/logo-suitmedia.png" height="24" alt="Logo">
+      </div>
+      <nav>
+        <ul>
+          <li>Work</li>
+          <li>About</li>
+          <li>Services</li>
+          <li class="active">Ideas</li>
+          <li>Careers</li>
+          <li>Contact</li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  
+<section id="banner">
+  <div class="banner-bg" style="background-image: url('https://raw.githubusercontent.com/Dicky-Sihite/asset/refs/heads/main/Mbabu.jpg');"></div>
+  <div class="banner-content">
+    <h1>Ideas</h1>
+    <p>Where all our great things begin</p>
+  </div>
+</section>
+
+  <main>
+    <div class="top-bar">
+      <span id="range-info"></span>
+      <div class="filters">
+        <label>
+          Show per page:
+          <select id="per-page">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </label>
+        <label>
+          Sort by:
+          <select id="sort">
+            <option value="-published_at">Newest</option>
+            <option value="published_at">Oldest</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div id="post-list" class="post-list"></div>
+    <div id="pagination" class="pagination"></div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
