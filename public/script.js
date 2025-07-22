@@ -14,7 +14,7 @@ let sort = localStorage.getItem('sort') || '-published_at';
 sortSelect.value = sort;
 perPageSelect.value = perPage;
 
-async function fetchPosts() {
+async function fetchArticles() {
   try {
     const url = `/api/ideas?page[number]=${currentPage}&page[size]=${perPage}&sort=${sort}`;
     const res = await fetch(url);
@@ -24,9 +24,9 @@ async function fetchPosts() {
       throw new Error('Data tidak valid.');
     }
 
-    renderPosts(data.data);
+    renderArticles(data.data);
 
-    const paginationData = data.meta?.page;
+    const paginationData = data.meta?.pagination;
     if (paginationData) {
       renderPagination(paginationData);
       updateRangeInfo(paginationData);
@@ -34,63 +34,88 @@ async function fetchPosts() {
 
   } catch (e) {
     console.error('Gagal memuat data:', e);
-    postList.innerHTML = '<p>Failed to load posts.</p>';
+    postList.innerHTML = '<p>Failed to load Articles.</p>';
   }
 }
 
-function renderPosts(posts) {
-  postList.innerHTML = posts.map(post => `
-    <div class="card">
-      <img src="${post.medium_image?.[0]?.url || ''}" alt="${post.title}" loading="lazy">
-      <div class="card-body">
-        <div class="card-date">${formatDate(post.published_at)}</div>
-        <div class="card-title">${post.title}</div>
-      </div>
-    </div>
-  `).join('');
+function renderArticles(articles) {
+  postList.innerHTML = '';
+
+  articles.forEach(item => {
+    const article = document.createElement('div');
+    article.classList.add('post-item');
+
+    // Tanggal
+    const date = document.createElement('p');
+    date.innerText = formatDate(item.published_at);
+    article.appendChild(date);
+
+    // Gambar
+    let imageUrl = '';
+    if (item.medium_image?.[0]?.url) {
+      imageUrl = item.medium_image[0].url;
+    } else if (item.small_image?.[0]?.url) {
+      imageUrl = item.small_image[0].url;
+    }
+
+    if (imageUrl) {
+      const fullImageUrl = imageUrl.startsWith('http')
+        ? imageUrl
+        : `https://suitmedia-backend.suitdev.com${imageUrl}`;
+      const img = document.createElement('img');
+      img.src = `/image?url=${encodeURIComponent(fullImageUrl)}`;
+      img.alt = item.title;
+      img.loading = 'lazy';
+      img.onerror = () => img.style.display = 'none';
+      article.appendChild(img);
+    }
+
+    // Judul
+    const title = document.createElement('h2');
+    title.textContent = item.title;
+    article.appendChild(title);
+
+    postList.appendChild(article);
+  });
 }
 
-function renderPagination({ total_pages, current_page }) {
-  const pagination = document.getElementById('pagination');
+function renderPagination(meta) {
   pagination.innerHTML = '';
 
-  const prevBtn = document.createElement('button');
-  prevBtn.innerHTML = '&laquo;';
-  prevBtn.disabled = current_page === 1;
-  prevBtn.onclick = () => {
-    if (current_page > 1) {
-      currentPage--;
-      saveState();
-      fetchPosts();
-    }
-  };
-  pagination.appendChild(prevBtn);
+  const totalPages = meta.total_pages;
+  const current = meta.current_page;
 
-  // Nomor halaman
-  for (let i = 1; i <= total_pages; i++) {
+  const createButton = (label, page, isActive = false, isDisabled = false) => {
     const btn = document.createElement('button');
-    btn.textContent = i;
-    if (i === current_page) btn.classList.add('active');
-    btn.onclick = () => {
-      currentPage = i;
-      saveState();
-      fetchPosts();
-    };
-    pagination.appendChild(btn);
+    btn.textContent = label;
+    btn.classList.add('pagination-btn');
+    if (isActive) btn.classList.add('active');
+    if (isDisabled) btn.disabled = true;
+    if (!isActive && !isDisabled && typeof page === 'number') {
+      btn.addEventListener('click', () => {
+        currentPage = page;
+        saveState();
+        fetchArticles();
+      });
+    }
+    return btn;
+  };
+
+  pagination.appendChild(createButton('«', current - 1, false, current === 1));
+
+  let startPage = Math.max(1, current - 2);
+  let endPage = startPage + 4;
+
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = Math.max(1, endPage - 4);
   }
 
-  // Tombol berikutnya
-  const nextBtn = document.createElement('button');
-  nextBtn.innerHTML = '&raquo;';
-  nextBtn.disabled = current_page === total_pages;
-  nextBtn.onclick = () => {
-    if (current_page < total_pages) {
-      currentPage++;
-      saveState();
-      fetchPosts();
-    }
-  };
-  pagination.appendChild(nextBtn);
+  for (let i = startPage; i <= endPage; i++) {
+    pagination.appendChild(createButton(i, i, i === current));
+  }
+
+  pagination.appendChild(createButton('»', current + 1, false, current === totalPages));
 }
 
 function updateRangeInfo({ current_page, per_page, total }) {
@@ -114,14 +139,14 @@ sortSelect.onchange = () => {
   sort = sortSelect.value;
   currentPage = 1;
   saveState();
-  fetchPosts();
+  fetchArticles();
 };
 
 perPageSelect.onchange = () => {
   perPage = parseInt(perPageSelect.value);
   currentPage = 1;
   saveState();
-  fetchPosts();
+  fetchArticles();
 };
 
 let lastScrollTop = 0;
@@ -134,7 +159,6 @@ window.addEventListener('scroll', () => {
   }
   lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
 
-  // Parallax effect
   if (bannerBg) {
     bannerBg.style.transform = `translateY(${currentScroll * 0.3}px)`;
   }
@@ -143,4 +167,4 @@ window.addEventListener('scroll', () => {
   }
 });
 
-fetchPosts();
+fetchArticles();
